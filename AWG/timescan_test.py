@@ -57,7 +57,7 @@ rep_number = 1  # 0: infinite loop
 scan_rep_number = 1  # 1: Default
 
 """ Step """  # (=> jj => llNumSteps)
-step_number = 10
+step_number = 100
 
 """ Samplerate (MS/s) """  # (=> SPC_SAMPLERATE) check the max. samplerate of AWG card
 samplerate = 10000  # MS/s
@@ -401,9 +401,11 @@ def collect_all_2ch_buffers_and_lengths(scan_fn_ch0, scan_fn_ch1, step_number, s
 
 # STAGE 1 : [왕쉬움] Basic scan function
 def time_scan(jj, samplerate):
-	"""Monotonic sine wave generator"""
+	"""Monotonic sine wave generator
+	(순수 Time scan: freq/phase 고정, pulse 길이만 jj에 비례해서 증가)"""
 
-	freq_CAR_MHz = 1.0
+	# ↓↓↓ [수정] freq_scan 등에서 찾은 실제 carrier 공진 주파수로 반드시 교체할 것
+	freq_CAR_MHz = 71.822
 	freq_RSB_MHz = 70.8604
 	freq_BSB_MHz = 72.7836
 
@@ -414,7 +416,7 @@ def time_scan(jj, samplerate):
 	# Zeeman sigma+ 207.966 Mhz, thres 10.5309 kHz
 
 	# Phase (Rad)
-	phase_single_rad = jj * 0.1 * np.pi
+	phase_single_rad = 0.0
 
 	# Amplitude
 	amp_single = 1
@@ -424,7 +426,7 @@ def time_scan(jj, samplerate):
 	# also Sample length, which increases proportionally with each jj loop as the time step
 	start_time_us = 0
 	step_time_us = 1
-	total_time_us = 10
+	total_time_us = start_time_us + jj * step_time_us
 
 	if total_time_us == 0:
 		llMemSamples = multiple_of_64(2048)
@@ -543,6 +545,7 @@ def single_phase_scan(jj, samplerate):
 	amp_single = 1  # 0 ≤ amp_single ≤ 1
 
 	# Rabi pi-time (us)
+	# [참고] time_scan에서 구한 π-time 값으로 반드시 교체할 것
 	pi_time_us = 10
 	half_pi_time_us = 0.5 * pi_time_us
 
@@ -1261,9 +1264,9 @@ if SHOW_TIMES == True:
 # Waveform(buffer) viewer
 if SHOW_WAVEFORMS == True:
 	# Show the waveform for each step
-	plt.plot(buffers[jj_show], label=f"jj = {jj_show}")
+	plt.plot(buffers[jj_show][:1000], label=f"jj = {jj_show}")
 	plt.title('')
-	plt.title('Waveform (Buffer for jj={})')
+	plt.title(f'Waveform (Buffer for jj={jj_show})')
 	plt.xlabel('Datapoint (0.1 ns)')
 	plt.ylabel('Amplitude')
 	plt.legend()
